@@ -15,14 +15,14 @@ jobs:
       - run: python backtest_ag5.py
       - run: python backtest_ag5_v16_2_full.py
       - run: python backtest_ag5_v16_3_core.py
-      - run: cat RESULTS_AG5.md
+      - run: python backtest_ag5_v15_1_core.py
       - run: cat HISTORY_AG5.csv || true
-      - run: cat HISTORY_AG5_FULL.csv || true
       - run: cat HISTORY_AG5_CORE.csv || true
+      - run: cat HISTORY_AG5_V15_1_CORE.csv || true
       - name: save history
         run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
-          git add RESULTS_AG5.md HISTORY_AG5.csv HISTORY_AG5_FULL.csv HISTORY_AG5_CORE.csv || true
-          git commit -m "daily log $(date +%F)" || true
+          git add HISTORY_*.csv || true
+          git commit -m "daily log $(date +%F) v15.1-C" || true
           git push || true
