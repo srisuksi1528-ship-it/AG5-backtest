@@ -1,4 +1,2 @@
-yfinance
 pandas
-numpy
-pytz
+yfinance
