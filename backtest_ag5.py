@@ -1,54 +1,35 @@
-import pandas as pd, numpy as np, time
+import pandas as pd, time
 print("[************************100%************************] 1 of 1 completed")
+import yfinance as yf
+df=pd.DataFrame()
+for i in range(3):
+    try:
+        tmp=yf.download("GC=F",period="2y",interval="1d",progress=False,threads=False,auto_adjust=True)
+        if isinstance(tmp.columns,pd.MultiIndex): tmp.columns=tmp.columns.get_level_values(0)
+        if len(tmp)>200: df=tmp; break
+    except: time.sleep(5)
 
-df = pd.DataFrame()
-try:
-    import yfinance as yf
-    for attempt in range(3):
-        try:
-            print(f"Try Yahoo GC=F attempt {attempt+1}")
-            tmp = yf.download("GC=F", period="1y", interval="1d", progress=False, threads=False, auto_adjust=True)
-            if isinstance(tmp.columns, pd.MultiIndex):
-                tmp.columns = tmp.columns.get_level_values(0)
-            if not tmp.empty and len(tmp) > 30:
-                df = tmp; break
-        except Exception as e:
-            print(f"Yahoo fail: {e}")
-        time.sleep(5)
-except Exception as e:
-    print(f"yf error {e}")
+if len(df)<200:
+    print("[STOP] ข้อมูลจริงไม่พอ - Re-run ใหม่ใน 1 ชม."); raise SystemExit(1)
 
-if df.empty:
-    print("Yahoo blocked -> synthetic")
-    dates = pd.date_range(end=pd.Timestamp.now(), periods=800, freq='D')
-    price = 2000 + np.cumsum(np.random.randn(800))
-    df = pd.DataFrame({"Close": price, "High": price+2, "Low": price-2}, index=dates)
+print(f"Loading AG5 v15.3 REAL rows={len(df)}")
+df['EMA5']=df['Close'].ewm(5).mean().shift(1)
+df['EMA20']=df['Close'].ewm(20).mean().shift(1)
+df['ATR']=(df['High']-df['Low']).rolling(14).mean().shift(1)
 
-if isinstance(df.columns, pd.MultiIndex):
-    df.columns = df.columns.get_level_values(0)
-
-print(f"Loading AG5 v15.1-C rows={len(df)}")
-df['EMA5']=df['Close'].ewm(span=5).mean()
-df['EMA20']=df['Close'].ewm(span=20).mean()
-df['ATR']=(df['High']-df['Low']).rolling(14).mean().fillna(2.0)
-
-def fval(x):
-    if isinstance(x, pd.Series): x=x.iloc[0]
-    try: return float(x)
-    except: return 0.0
-
-trades=[]; pos=None; entry=0.0
-for i in range(20,len(df)):
-    c=fval(df['Close'].iloc[i]); e5=fval(df['EMA5'].iloc[i]); e20=fval(df['EMA20'].iloc[i])
+def fval(x): return float(x.iloc[0]) if isinstance(x,pd.Series) else float(x)
+COMMISSION=0.0002
+trades=[]
+for i in range(30,len(df)-1):
+    e5=fval(df['EMA5'].iloc[i]); e20=fval(df['EMA20'].iloc[i])
     pe5=fval(df['EMA5'].iloc[i-1]); pe20=fval(df['EMA20'].iloc[i-1]); atr=fval(df['ATR'].iloc[i])
-    if pos is None and pe5<=pe20 and e5>e20: pos="long"; entry=c
-    elif pos=="long" and atr>0:
-        if c>=entry+1.5*atr or c<=entry-atr:
-            trades.append((c-entry)/entry*100); pos=None
+    if pe5<=pe20 and e5>e20:
+        entry=fval(df['Open'].iloc[i+1])
+        for j in range(i+1,min(i+20,len(df))):
+            cc=fval(df['Close'].iloc[j])
+            if cc>=entry+1.5*atr or cc<=entry-atr:
+                trades.append(((cc-entry)/entry-COMMISSION)*100); break
 
-total=len(trades)
-winrate=len([t for t in trades if t>0])/total*100 if total else 0
-print(f"Trades: {total}")
-print(f"Winrate: {winrate:.2f}%")
-with open("RESULTS_AG5.md","w") as out:
-    out.write(f"# RESULTS AG5 v15.1-C\nTrades: {total}\nWinrate: {winrate:.2f}%\n")
+tt=len(trades); wt=len([t for t in trades if t>0])/tt*100 if tt else 0
+pft=sum([t for t in trades if t>0])/abs(sum([t for t in trades if t<0])) if sum([t for t in trades if t<0])!=0 else 0
+print(f"Trades: {tt} Winrate: {wt:.2f}% PF: {pft:.2f}")
