@@ -13,12 +13,14 @@ jobs:
           python-version: '3.10'
       - run: pip install -r requirements.txt
       - run: python backtest_ag5.py
+      - run: python backtest_ag5_v16_2_full.py
       - run: cat RESULTS_AG5.md
-      - run: cat HISTORY_AG5.csv
+      - run: cat HISTORY_AG5.csv || true
+      - run: cat HISTORY_AG5_FULL.csv || true
       - name: save history
         run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
-          git add RESULTS_AG5.md HISTORY_AG5.csv || true
+          git add RESULTS_AG5.md HISTORY_AG5.csv HISTORY_AG5_FULL.csv || true
           git commit -m "daily log $(date +%F)" || true
           git push || true
