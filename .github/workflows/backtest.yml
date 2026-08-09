@@ -14,12 +14,12 @@ jobs:
       - run: pip install -r requirements.txt
       - run: python backtest_ag5_v16_3_core.py
       - run: python backtest_ag5_v15_1_core.py
-      - run: echo "=== v14.17 CORE (ชื่อเดิม: v14.17 CORE) ===" && cat HISTORY_AG5_CORE.csv | tail -3
-      - run: echo "=== v15.1-C CORE (ชื่อเดิม: v15.1-C [ALLGOLD]) ===" && cat HISTORY_AG5_V15_1_CORE.csv | tail -3
+      - run: cat HISTORY_AG5_CORE.csv
+      - run: cat HISTORY_AG5_V15_1_CORE.csv
       - name: save history
         run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
           git add HISTORY_*.csv || true
-          git commit -m "daily log $(date +%F) CORE compare" || true
+          git commit -m "daily log" || true
           git push || true
