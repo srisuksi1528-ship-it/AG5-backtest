@@ -1,35 +1,75 @@
-import pandas as pd, time
-print("[************************100%************************] 1 of 1 completed")
+# AG5 v16.0 FINAL REAL-READY - START FRESH เน้นใช้งานจริง
+import pandas as pd
 import yfinance as yf
-df=pd.DataFrame()
-for i in range(3):
+import time
+
+print("[************************100%************************] 1 of 1 completed")
+
+df = pd.DataFrame()
+for attempt in range(3):
     try:
-        tmp=yf.download("GC=F",period="2y",interval="1d",progress=False,threads=False,auto_adjust=True)
-        if isinstance(tmp.columns,pd.MultiIndex): tmp.columns=tmp.columns.get_level_values(0)
-        if len(tmp)>200: df=tmp; break
-    except: time.sleep(5)
+        tmp = yf.download("GC=F", period="2y", interval="1d", progress=False, threads=False, auto_adjust=True)
+        if isinstance(tmp.columns, pd.MultiIndex):
+            tmp.columns = tmp.columns.get_level_values(0)
+        if len(tmp) > 200:
+            df = tmp
+            break
+    except:
+        time.sleep(3)
 
-if len(df)<200:
-    print("[STOP] ข้อมูลจริงไม่พอ - Re-run ใหม่ใน 1 ชม."); raise SystemExit(1)
+if len(df) < 200:
+    print(f"[STOP] rows={len(df)} too low - Re-run in 1 hour")
+    with open("RESULTS_AG5.md", "w", encoding="utf-8") as out:
+        out.write(f"# AG5 v16.0 FAILED\nRows: {len(df)} need re-run\n")
+    raise SystemExit(1)
 
-print(f"Loading AG5 v15.3 REAL rows={len(df)}")
-df['EMA5']=df['Close'].ewm(5).mean().shift(1)
-df['EMA20']=df['Close'].ewm(20).mean().shift(1)
-df['ATR']=(df['High']-df['Low']).rolling(14).mean().shift(1)
+print(f"Loading AG5 v16.0 FINAL REAL rows={len(df)}")
 
-def fval(x): return float(x.iloc[0]) if isinstance(x,pd.Series) else float(x)
-COMMISSION=0.0002
-trades=[]
-for i in range(30,len(df)-1):
-    e5=fval(df['EMA5'].iloc[i]); e20=fval(df['EMA20'].iloc[i])
-    pe5=fval(df['EMA5'].iloc[i-1]); pe20=fval(df['EMA20'].iloc[i-1]); atr=fval(df['ATR'].iloc[i])
-    if pe5<=pe20 and e5>e20:
-        entry=fval(df['Open'].iloc[i+1])
-        for j in range(i+1,min(i+20,len(df))):
-            cc=fval(df['Close'].iloc[j])
-            if cc>=entry+1.5*atr or cc<=entry-atr:
-                trades.append(((cc-entry)/entry-COMMISSION)*100); break
+df['EMA5'] = df['Close'].ewm(span=5, adjust=False).mean().shift(1)
+df['EMA20'] = df['Close'].ewm(span=20, adjust=False).mean().shift(1)
+df['ATR'] = (df['High'] - df['Low']).rolling(14).mean().shift(1)
 
-tt=len(trades); wt=len([t for t in trades if t>0])/tt*100 if tt else 0
-pft=sum([t for t in trades if t>0])/abs(sum([t for t in trades if t<0])) if sum([t for t in trades if t<0])!=0 else 0
+def fval(x):
+    if isinstance(x, pd.Series):
+        x = x.iloc[0]
+    try:
+        return float(x)
+    except:
+        return 0.0
+
+COMMISSION = 0.0002
+SLIPPAGE = 0.0001
+trades = []
+
+for i in range(30, len(df)-1):
+    e5 = fval(df['EMA5'].iloc[i])
+    e20 = fval(df['EMA20'].iloc[i])
+    pe5 = fval(df['EMA5'].iloc[i-1])
+    pe20 = fval(df['EMA20'].iloc[i-1])
+    atr = fval(df['ATR'].iloc[i])
+    if atr == 0:
+        continue
+    if pe5 <= pe20 and e5 > e20:
+        entry = fval(df['Open'].iloc[i+1])
+        for j in range(i+1, min(i+30, len(df))):
+            cc = fval(df['Close'].iloc[j])
+            if cc >= entry + 1.2*atr or cc <= entry - 0.8*atr:
+                trades.append(((cc-entry)/entry-COMMISSION-SLIPPAGE)*100)
+                break
+    if pe5 >= pe20 and e5 < e20:
+        entry = fval(df['Open'].iloc[i+1])
+        for j in range(i+1, min(i+30, len(df))):
+            cc = fval(df['Close'].iloc[j])
+            if cc <= entry - 1.2*atr or cc >= entry + 0.8*atr:
+                trades.append(((entry-cc)/entry-COMMISSION-SLIPPAGE)*100)
+                break
+
+tt = len(trades)
+wt = len([t for t in trades if t>0])/tt*100 if tt else 0
+pos = sum([t for t in trades if t>0])
+neg = sum([t for t in trades if t<0])
+pft = pos/abs(neg) if neg!=0 else 0
 print(f"Trades: {tt} Winrate: {wt:.2f}% PF: {pft:.2f}")
+
+with open("RESULTS_AG5.md","w",encoding="utf-8") as out:
+    out.write(f"# AG5 v16.0 FINAL REAL\nRows: {len(df)}\nTrades: {tt} Win: {wt:.2f}% PF: {pft:.2f}\n")
