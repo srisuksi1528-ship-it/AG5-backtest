@@ -1,7 +1,6 @@
-# AG5 v16.2 FULL - replicate Pine v14.17-C [ALLGOLD] Observation Layer
+# AG5 v16.2 FULL FIX INDEX - replicate Pine v14.17-C
 import pandas as pd, yfinance as yf, time, datetime, csv, os
 print("[************************100%************************] 1 of 1 completed")
-
 df = pd.DataFrame()
 for i in range(3):
     try:
@@ -9,11 +8,10 @@ for i in range(3):
         if isinstance(tmp.columns, pd.MultiIndex):
             tmp.columns = tmp.columns.get_level_values(0)
         if len(tmp) > 200:
-            df = tmp
+            df = tmp.reset_index(drop=True)
             break
     except:
         time.sleep(3)
-
 if len(df) < 200:
     with open("RESULTS_AG5.md","w",encoding="utf-8") as f:
         f.write(f"# FAILED rows={len(df)} need re-run\n")
@@ -38,12 +36,7 @@ atr_val = tr.rolling(p_base).mean().shift(1)
 p_reward = 2.0
 p_risk = 1.0
 p_friction = 15.0
-gross_tp = atr_val * p_reward
-net_edge = gross_tp - p_friction
-edge_valid = net_edge > 0
-
-integrity_ok = pd.Series([True]*len(df))
-session_gate = pd.Series([True]*len(df))
+edge_valid = (atr_val * p_reward - p_friction) > 0
 
 p_pivot_l = 5
 p_pivot_r = 5
@@ -51,15 +44,13 @@ is_pivot_high = pd.Series([False]*len(df))
 is_pivot_low = pd.Series([False]*len(df))
 
 for i in range(p_pivot_l, len(df)-p_pivot_r):
-    window_h = high.iloc[i-p_pivot_l:i+p_pivot_r+1]
-    if high.iloc[i] == window_h.max():
+    if high.iloc[i] == high.iloc[i-p_pivot_l:i+p_pivot_r+1].max():
         is_pivot_high.iloc[i+p_pivot_r] = True
-    window_l = low.iloc[i-p_pivot_l:i+p_pivot_r+1]
-    if low.iloc[i] == window_l.min():
+    if low.iloc[i] == low.iloc[i-p_pivot_l:i+p_pivot_r+1].min():
         is_pivot_low.iloc[i+p_pivot_r] = True
 
-raw_sell = is_pivot_high & (~trend_up)
-raw_buy = is_pivot_low & (trend_up)
+raw_sell = is_pivot_high & (~trend_up.fillna(False))
+raw_buy = is_pivot_low & (trend_up.fillna(False))
 
 p_cooldown_bars = 10
 valid_buy_list = [False]*len(df)
@@ -68,15 +59,15 @@ last_buy_bar = -999999
 last_sell_bar = -999999
 
 for i in range(len(df)):
+    if pd.isna(edge_valid.iloc[i]) or not edge_valid.iloc[i]:
+        continue
     b_cool = (i - last_buy_bar) >= p_cooldown_bars
     s_cool = (i - last_sell_bar) >= p_cooldown_bars
-    vb = bool(raw_buy.iloc[i] and edge_valid.iloc[i] and integrity_ok.iloc[i] and session_gate.iloc[i] and b_cool)
-    vs = bool(raw_sell.iloc[i] and edge_valid.iloc[i] and integrity_ok.iloc[i] and session_gate.iloc[i] and s_cool)
-    valid_buy_list[i] = vb
-    valid_sell_list[i] = vs
-    if vb:
+    if raw_buy.iloc[i] and b_cool:
+        valid_buy_list[i] = True
         last_buy_bar = i
-    if vs:
+    if raw_sell.iloc[i] and s_cool:
+        valid_sell_list[i] = True
         last_sell_bar = i
 
 valid_buy = pd.Series(valid_buy_list)
@@ -88,7 +79,6 @@ buy_pending = False
 sell_stop = None
 sell_target = None
 sell_pending = False
-
 win_count_buy = 0
 loss_count_buy = 0
 win_count_sell = 0
@@ -109,7 +99,6 @@ for i in range(len(df)-1):
         elif low.iloc[i] <= sell_target:
             win_count_sell += 1
             sell_pending = False
-
     if valid_buy.iloc[i]:
         c = float(close.iloc[i])
         atr = float(atr_val.iloc[i]) if not pd.isna(atr_val.iloc[i]) else 0
@@ -134,10 +123,10 @@ neg_r = (loss_count_buy+loss_count_sell)*p_risk
 pf = pos_r/abs(neg_r) if neg_r!=0 else 0
 valid_count = int(valid_buy.sum() + valid_sell.sum())
 
-print(f"Loading AG5 v16.2 FULL rows={len(df)} Valid={valid_count} Trades={total_trades} Win={win_rate_total:.2f}% PF={pf:.2f}")
+print(f"FULL FIXED rows={len(df)} Valid={valid_count} Trades={total_trades} Win={win_rate_total:.2f}% PF={pf:.2f} Buy {win_count_buy}-{loss_count_buy} Sell {win_count_sell}-{loss_count_sell}")
 
 with open("RESULTS_AG5.md","w",encoding="utf-8") as f:
-    f.write(f"# AG5 v16.2 FULL - Pine v14.17-C\nRows: {len(df)}\nValid: {valid_count} Trades: {total_trades} Win: {win_rate_total:.2f}% PF: {pf:.2f}\n")
+    f.write(f"# AG5 v16.2 FULL FIXED\nRows: {len(df)}\nValid: {valid_count} Trades: {total_trades} Win: {win_rate_total:.2f}% PF: {pf:.2f}\n")
 
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 path = "HISTORY_AG5_FULL.csv"
