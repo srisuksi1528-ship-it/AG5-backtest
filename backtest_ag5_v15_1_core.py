@@ -1,5 +1,5 @@
-# AG5 v15.1-C CORE (ชื่อโค้ดเดิม: AG5 Observation Layer v15.1-C [ALLGOLD] - CORE Physical)
-import pandas as pd, yfinance as yf, time, datetime, csv, os
+# AG5 v15.1-C CORE (ชื่อโค้ดเดิม: AG5 Observation Layer v15.1-C [ALLGOLD] - CORE Physical) - FIXED
+import pandas as pd, yfinance as yf, time, datetime, os
 print("[************************100%************************] 1 of 1 completed")
 df = pd.DataFrame()
 for i in range(3):
@@ -24,9 +24,11 @@ trend_up = close.shift(1) > ema.shift(1)
 tr = pd.concat([high-low, (high-close.shift(1)).abs(), (low-close.shift(1)).abs()], axis=1).max(axis=1)
 atr = tr.rolling(p_atr_per).mean().shift(1)
 edge_valid = (atr * p_reward - p_friction) > 0
+edge_valid = edge_valid.fillna(False)
 is_pivot_low = pd.Series(False, index=df.index)
 for i in range(p_pivot_l, len(df)-p_pivot_r):
-    if low.iloc[i] == low.iloc[i-p_pivot_l:i+p_pivot_r+1].min():
+    window = low.iloc[i-p_pivot_l:i+p_pivot_r+1]
+    if len(window)>0 and low.iloc[i] == window.min():
         is_pivot_low.iloc[i+p_pivot_r] = True
 raw_buy = is_pivot_low & trend_up.fillna(False)
 sma100 = atr.rolling(100).mean()
@@ -36,29 +38,44 @@ mult = 1.0 - (z * 0.5)
 valid = []
 last = -999999
 for i in range(len(df)):
-    if not edge_valid.iloc[i]: continue
-    cool = round(p_cooldown_bars * float(mult.iloc[i])) if i>=100 else p_cooldown_bars
-    if (i - last) >= max(1,cool) and raw_buy.iloc[i]:
-        valid.append(True); last=i
+    if not edge_valid.iloc[i]:
+        valid.append(False)
+        continue
+    cool = round(p_cooldown_bars * float(mult.iloc[i])) if i>=100 and not pd.isna(mult.iloc[i]) else p_cooldown_bars
+    cool = max(1, cool)
+    if (i - last) >= cool and raw_buy.iloc[i]:
+        valid.append(True)
+        last = i
     else:
         valid.append(False)
-valid_buy = pd.Series(valid)
-stop=target=None; pend=False; w=l=0
+valid_buy = pd.Series(valid, index=df.index)
+stop=target=None
+pend=False
+w=l=0
 for i in range(len(df)-1):
     if pend:
-        if low.iloc[i] <= stop: l+=1; pend=False
-        elif high.iloc[i] >= target: w+=1; pend=False
-    if valid_buy.iloc[i] and atr.iloc[i]>0:
-        c=float(close.iloc[i]); a=float(atr.iloc[i])
-        stop=c-a*p_risk; target=c+a*p_reward; pend=True
+        if low.iloc[i] <= stop:
+            l+=1
+            pend=False
+        elif high.iloc[i] >= target:
+            w+=1
+            pend=False
+    if valid_buy.iloc[i] and not pd.isna(atr.iloc[i]) and atr.iloc[i]>0:
+        c=float(close.iloc[i])
+        a=float(atr.iloc[i])
+        stop=c-a*p_risk
+        target=c+a*p_reward
+        pend=True
 trades=w+l
 win=w*100.0/trades if trades else 0
 pf=(w*p_reward)/(l*p_risk) if l else 0
-print(f"v15.1-C CORE (ชื่อเดิม: v15.1-C [ALLGOLD] CORE Physical) rows={len(df)} Valid={int(valid_buy.sum())} Trades={trades} Win={win:.2f}% PF={pf:.2f} Buy {w}-{l}")
+print(f"v15.1-C CORE (ชื่อเดิม: v15.1-C [ALLGOLD] CORE Physical) rows={len(df)} Valid={int(valid_buy.sum())} Trades={trades} Win={win:.2f}% PF={pf:.2f} Buy {w}-{l} (FIXED)")
 today=datetime.datetime.now().strftime("%Y-%m-%d")
 path="HISTORY_AG5_V15_1_CORE.csv"
 new=not os.path.exists(path)
 with open(path,"a",newline="",encoding="utf-8") as f:
-    import csv as _csv; writer=_csv.writer(f)
-    if new: writer.writerow(["date","rows","valid","trades","winrate","pf","code"])
-    writer.writerow([today,len(df),int(valid_buy.sum()),trades,f"{win:.2f}",f"{pf:.2f}","v15.1-C CORE (ชื่อเดิม: v15.1-C [ALLGOLD])"])
+    import csv as _csv
+    writer=_csv.writer(f)
+    if new:
+        writer.writerow(["date","rows","valid","trades","winrate","pf","code"])
+    writer.writerow([today,len(df),int(valid_buy.sum()),trades,f"{win:.2f}",f"{pf:.2f}","v15.1-C CORE (ชื่อเดิม: v15.1-C [ALLGOLD]) - FIXED"])
