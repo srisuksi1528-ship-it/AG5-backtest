@@ -17,15 +17,17 @@ jobs:
       - run: python backtest_ag5_v16_0_institutional.py
       - run: python backtest_ag5_v16_0_c_lite.py
       - run: python backtest_ag5_v15_9_c_lite.py
+      - run: python backtest_ag5_v14_9_c.py
       - run: cat HISTORY_AG5_CORE.csv
       - run: cat HISTORY_AG5_V15_1_CORE.csv
       - run: cat HISTORY_AG5_V16_0.csv
       - run: cat HISTORY_AG5_V16_0_C_LITE.csv
       - run: cat HISTORY_AG5_V15_9_C_LITE.csv
+      - run: cat HISTORY_AG5_V14_9_C.csv
       - name: save history
         run: |
           git config user.name "bot"
           git config user.email "bot@bot.com"
           git add HISTORY_*.csv || true
-          git commit -m "daily log 5 models keep all" || true
+          git commit -m "daily log 6 models keep all" || true
           git push || true
