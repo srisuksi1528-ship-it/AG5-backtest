@@ -21,5 +21,7 @@ jobs:
         run: python backtest_ag6_v1_2_elite.py
       - name: Run python backtest_ag6_v1_3_elite.py
         run: python backtest_ag6_v1_3_elite.py
+      - name: Run python backtest_ag6_v1_4_elite.py
+        run: python backtest_ag6_v1_4_elite.py
       - name: Run cat HISTORY
         run: cat HISTORY*.csv || true
