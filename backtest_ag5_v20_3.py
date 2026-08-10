@@ -1,4 +1,4 @@
-# AG5 V20.3 (ชื่อเดิม: AG5 V20.3 - Scoring/BOS/Retest/H4 Regime M15 design - converted to Daily)
+# AG5 V20.3 FIXED
 import pandas as pd, yfinance as yf, time, datetime, os, math
 print("[************************100%************************] 1 of 1 completed")
 df=pd.DataFrame()
@@ -9,17 +9,14 @@ for _ in range(3):
         if len(tmp)>200: df=tmp.reset_index(drop=True); break
     except: time.sleep(3)
 if len(df)<200: raise SystemExit(f"rows {len(df)}")
-
 close,high,low,open_=df['Close'],df['High'],df['Low'],df['Open']
 vol=df['Volume'] if 'Volume' in df else pd.Series([0]*len(df))
-
 p_thresh=70.0
 p_w_trend,p_w_struct,p_w_mom,p_w_vol,p_w_liq=25.0,25.0,20.0,15.0
 p_risk_mult,p_reward_mult=1.0,2.0
 p_max_dur=64
 p_retest_mult,p_disp_mult,p_break_mult=0.20,0.50,0.10
 p_bos_max=32
-
 ema50=close.ewm(span=50,adjust=False).mean()
 ema200=close.ewm(span=200,adjust=False).mean()
 tr1=high-low
@@ -30,21 +27,17 @@ atr_raw=tr.rolling(14).mean()
 atr=atr_raw
 atr_sma=atr_raw.rolling(50).mean()
 vol_sma=vol.rolling(20).mean()
-
 ph_bool=[False]*len(df)
 pl_bool=[False]*len(df)
 ph_val=[float('nan')]*len(df)
 pl_val=[float('nan')]*len(df)
 for i in range(5,len(df)-5):
-    win_h=high.iloc[i-5:i+6].max()
-    if high.iloc[i]==win_h:
+    if high.iloc[i]==high.iloc[i-5:i+6].max():
         ph_bool[i+5]=True
         ph_val[i+5]=float(high.iloc[i])
-    win_l=low.iloc[i-5:i+6].min()
-    if low.iloc[i]==win_l:
+    if low.iloc[i]==low.iloc[i-5:i+6].min():
         pl_bool[i+5]=True
         pl_val[i+5]=float(low.iloc[i])
-
 res_arr=[]
 sup_arr=[]
 bos_bull_bar=-999
@@ -55,12 +48,12 @@ last_long=-999999
 last_short=-999999
 valid_buy=0
 valid_sell=0
-trades_log=[]
 trade_dir=0
-trade_entry=trade_sl=trade_tp=float('nan')
+trade_entry=float('nan')
+trade_sl=float('nan')
+trade_tp=float('nan')
 trade_bar=-1
 w_b=l_b=w_s=l_s=0
-
 for i in range(len(df)):
     if ph_bool[i]:
         res_arr.insert(0, ph_val[i])
@@ -141,10 +134,7 @@ for i in range(len(df)):
     if long_sig: valid_buy+=1
     if short_sig: valid_sell+=1
     if trade_dir!=0:
-        exit_tp=False
-        exit_sl=False
-        exit_reg=False
-        exit_rec=False
+        exit_tp=exit_sl=exit_reg=exit_rec=False
         exit_time=(i-trade_bar)>=p_max_dur
         if trade_dir==1:
             if float(high.iloc[i])>=trade_tp: exit_tp=True
@@ -157,17 +147,13 @@ for i in range(len(df)):
             if h4_regime==1: exit_reg=True
             if bear_invalidated: exit_rec=True
         if exit_tp or exit_sl or exit_reg or exit_rec or exit_time:
-            sl_dist=abs(trade_entry-trade_sl)
-            r=(float(close.iloc[i])-trade_entry)/sl_dist if trade_dir==1 else (trade_entry-float(close.iloc[i]))/sl_dist
-            if r>0:
-                if trade_dir==1: w_b+=1
-                else: w_s+=1
+            if trade_dir==1:
+                if float(close.iloc[i])>=trade_tp or (trade_tp!=float('nan') and float(high.iloc[i])>=trade_tp): w_b+=1
+                else: l_b+=1
             else:
-                if trade_dir==1: l_b+=1
+                if float(close.iloc[i])<=trade_tp or (trade_tp!=float('nan') and float(low.iloc[i])<=trade_tp): w_s+=1
                 else: l_s+=1
-            trades_log.append(r)
             trade_dir=0
-            trade_entry=float('nan')
     if trade_dir==0:
         if long_sig:
             trade_dir=1
@@ -183,7 +169,6 @@ for i in range(len(df)):
             trade_tp=trade_entry-(atr_i*p_reward_mult)
             trade_bar=i
             last_short=i
-
 trades=w_b+l_b+w_s+l_s
 win=(w_b+w_s)*100.0/trades if trades else 0
 pf=((w_b+w_s)*p_reward_mult)/((l_b+l_s)*p_risk_mult) if (l_b+l_s)>0 else 0
