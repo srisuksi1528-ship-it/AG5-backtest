@@ -184,4 +184,4 @@ with open(path,"a",newline="",encoding="utf-8") as f:
     import csv
     w=csv.writer(f)
     if new: w.writerow(["date","rows","valid_buy","valid_sell","trades","winrate","pf","code"])
-    w.writerow([today,len(df),valid_buy,valid_sell,trades,f"{win:.2f}",f"{pf:.2f}","v20.5"])มาสต
+    w.writerow([today,len(df),valid_buy,valid_sell,trades,f"{win:.2f}",f"{pf:.2f}","v20.5"])
