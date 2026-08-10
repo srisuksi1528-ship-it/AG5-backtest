@@ -1,4 +1,4 @@
-# AG5 V20.3 V20.3 THRESH 60 - no unpack, 5 vars separate, compile tested
+# AG5 V20.3 V20.3 TH55 BOS48 - no unpack, 5 vars separate, compile tested
 import pandas as pd, yfinance as yf, time, datetime, os, math
 print("[************************100%************************] 1 of 1 completed")
 df=pd.DataFrame()
@@ -11,7 +11,7 @@ for _ in range(3):
 if len(df)<200: raise SystemExit(f"rows {len(df)}")
 close,high,low,open_=df['Close'],df['High'],df['Low'],df['Open']
 vol=df['Volume'] if 'Volume' in df else pd.Series([0]*len(df), index=df.index)
-p_thresh=60.0
+p_thresh=55.0
 p_w_trend=25.0
 p_w_struct=25.0
 p_w_mom=20.0
@@ -20,7 +20,7 @@ p_w_liq=15.0
 p_risk_mult,p_reward_mult=1.0,2.0
 p_max_dur=64
 p_retest_mult,p_disp_mult,p_break_mult=0.20,0.50,0.10
-p_bos_max=32
+p_bos_max=48
 ema50=close.ewm(span=50,adjust=False).mean()
 ema200=close.ewm(span=200,adjust=False).mean()
 tr1=high-low
