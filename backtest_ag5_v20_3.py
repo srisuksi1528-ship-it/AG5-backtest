@@ -1,4 +1,4 @@
-# AG5 V20.3 V20.4 AGGRESSIVE TH50 RET35 DISP30 - no unpack, 5 vars separate, compile tested
+# AG5 V20.3 V20.5 BALANCED TH45 BOS64 - no unpack, 5 vars separate, compile tested
 import pandas as pd, yfinance as yf, time, datetime, os, math
 print("[************************100%************************] 1 of 1 completed")
 df=pd.DataFrame()
@@ -11,7 +11,7 @@ for _ in range(3):
 if len(df)<200: raise SystemExit(f"rows {len(df)}")
 close,high,low,open_=df['Close'],df['High'],df['Low'],df['Open']
 vol=df['Volume'] if 'Volume' in df else pd.Series([0]*len(df), index=df.index)
-p_thresh=50.0
+p_thresh=45.0
 p_w_trend=25.0
 p_w_struct=25.0
 p_w_mom=20.0
@@ -19,8 +19,8 @@ p_w_vol=15.0
 p_w_liq=15.0
 p_risk_mult,p_reward_mult=1.0,2.0
 p_max_dur=64
-p_retest_mult,p_disp_mult,p_break_mult=0.35,0.30,0.10
-p_bos_max=48
+p_retest_mult,p_disp_mult,p_break_mult=0.40,0.25,0.10
+p_bos_max=64
 ema50=close.ewm(span=50,adjust=False).mean()
 ema200=close.ewm(span=200,adjust=False).mean()
 tr1=high-low
@@ -71,7 +71,7 @@ for i in range(len(df)):
     atr_i=float(atr.iloc[i])
     if atr_i<=0: continue
     atr_sma_i=float(atr_sma.iloc[i]) if not pd.isna(atr_sma.iloc[i]) else atr_i
-    vol_ok=atr_i>0 and atr_i>(atr_sma_i*0.5)
+    vol_ok=atr_i>0 and atr_i>(atr_sma_i*0.4)
     if i==0: continue
     h4_close=float(close.iloc[i-1])
     h4_fast=float(ema50.iloc[i-1])
@@ -131,8 +131,8 @@ for i in range(len(df)):
     elif vol_ratio>=1.0: score_vol=p_w_vol*0.4
     score_liq=p_w_liq if vol_ok else p_w_liq*0.4
     total_score=score_trend+score_struct+score_mom+score_vol+score_liq
-    bull_align=(h4_regime==1 and retest_bull and float(close.iloc[i])>h4_fast)
-    bear_align=(h4_regime==-1 and retest_bear and float(close.iloc[i])<h4_fast)
+    bull_align=(retest_bull and float(close.iloc[i])>h4_fast)
+    bear_align=(retest_bear and float(close.iloc[i])<h4_fast)
     long_sig=bull_align and total_score>=p_thresh and vol_ok and (i-last_long>=3)
     short_sig=bear_align and total_score>=p_thresh and vol_ok and (i-last_short>=3)
     if long_sig: valid_buy+=1
@@ -176,7 +176,7 @@ for i in range(len(df)):
 trades=w_b+l_b+w_s+l_s
 win=(w_b+w_s)*100.0/trades if trades else 0
 pf=((w_b+w_s)*p_reward_mult)/((l_b+l_s)*p_risk_mult) if (l_b+l_s)>0 else 0
-print(f"v20.4 (ชื่อเดิม: AG5 V20.3 Scoring/BOS/Retest M15) rows={len(df)} Valid Buy={valid_buy} Sell={valid_sell} Trades={trades} Win={win:.2f}% PF={pf:.2f} Buy {w_b}-{l_b} Sell {w_s}-{l_s}")
+print(f"v20.5 (ชื่อเดิม: AG5 V20.3 Scoring/BOS/Retest M15) rows={len(df)} Valid Buy={valid_buy} Sell={valid_sell} Trades={trades} Win={win:.2f}% PF={pf:.2f} Buy {w_b}-{l_b} Sell {w_s}-{l_s}")
 today=datetime.datetime.now().strftime("%Y-%m-%d")
 path="HISTORY_AG5_V20_3.csv"
 new=not os.path.exists(path)
@@ -184,4 +184,4 @@ with open(path,"a",newline="",encoding="utf-8") as f:
     import csv
     w=csv.writer(f)
     if new: w.writerow(["date","rows","valid_buy","valid_sell","trades","winrate","pf","code"])
-    w.writerow([today,len(df),valid_buy,valid_sell,trades,f"{win:.2f}",f"{pf:.2f}","v20.4"])
+    w.writerow([today,len(df),valid_buy,valid_sell,trades,f"{win:.2f}",f"{pf:.2f}","v20.5"])มาสต
