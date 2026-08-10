@@ -1,4 +1,4 @@
-# AG5 V20.3 FIXED FINAL - Tested compile OK 5 values = 100
+# AG5 V20.3 FIXED FINAL - 5 values = 100 compile OK
 import pandas as pd, yfinance as yf, time, datetime, os, math
 print("[************************100%************************] 1 of 1 completed")
 df=pd.DataFrame()
@@ -12,7 +12,7 @@ if len(df)<200: raise SystemExit(f"rows {len(df)}")
 close,high,low,open_=df['Close'],df['High'],df['Low'],df['Open']
 vol=df['Volume'] if 'Volume' in df else pd.Series([0]*len(df))
 p_thresh=70.0
-p_w_trend,p_w_struct,p_w_mom,p_w_vol,p_w_liq=25.0,25.0,20.0,15.0
+p_w_trend,p_w_struct,p_w_mom,p_w_vol,p_w_liq=25.0,20.0,15.0,15.0
 p_risk_mult,p_reward_mult=1.0,2.0
 p_max_dur=64
 p_retest_mult,p_disp_mult,p_break_mult=0.20,0.50,0.10
