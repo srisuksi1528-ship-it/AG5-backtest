@@ -11,27 +11,41 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.10'
-      - run: pip install -r requirements.txt
-      - run: python backtest_ag5_v16_3_core.py
-      - run: python backtest_ag5_v15_1_core.py
-      - run: python backtest_ag5_v16_0_institutional.py
-      - run: python backtest_ag5_v16_0_c_lite.py
-      - run: python backtest_ag5_v15_9_c_lite.py
-      - run: python backtest_ag5_v14_9_c.py
-      - run: python backtest_ag5_v13_5.py
-      - run: python backtest_ag5_v20_3.py
-      - run: cat HISTORY_AG5_CORE.csv
-      - run: cat HISTORY_AG5_V15_1_CORE.csv
-      - run: cat HISTORY_AG5_V16_0.csv
-      - run: cat HISTORY_AG5_V16_0_C_LITE.csv
-      - run: cat HISTORY_AG5_V15_9_C_LITE.csv
-      - run: cat HISTORY_AG5_V14_9_C.csv
-      - run: cat HISTORY_AG5_V13_5.csv
-      - run: cat HISTORY_AG5_V20_3.csv
-      - name: save history
-        run: |
-          git config user.name "bot"
-          git config user.email "bot@bot.com"
-          git add HISTORY_*.csv || true
-          git commit -m "daily log 8 models keep all" || true
-          git push || true
+      - name: Run pip install -r requirements.txt
+        run: pip install -r requirements.txt
+      - name: Run python backtest_ag5_v16_3_core.py
+        run: python backtest_ag5_v16_3_core.py
+      - name: Run python backtest_ag5_v15_1_core.py
+        run: python backtest_ag5_v15_1_core.py
+      - name: Run python backtest_ag5_v16_0_institutional.py
+        run: python backtest_ag5_v16_0_institutional.py
+      - name: Run python backtest_ag5_v16_0_c_lite.py
+        run: python backtest_ag5_v16_0_c_lite.py
+      - name: Run python backtest_ag5_v15_9_c_lite.py
+        run: python backtest_ag5_v15_9_c_lite.py
+      - name: Run python backtest_ag5_v14_9_c.py
+        run: python backtest_ag5_v14_9_c.py
+      - name: Run python backtest_ag5_v13_5.py
+        run: python backtest_ag5_v13_5.py
+      - name: Run python backtest_ag5_v20_3.py
+        run: python backtest_ag5_v20_3.py
+      - name: Run python backtest_ag6_v1_1_elite.py
+        run: python backtest_ag6_v1_1_elite.py
+      - name: Run cat HISTORY_AG5_CORE.csv
+        run: cat HISTORY_AG5_CORE.csv || true
+      - name: Run cat HISTORY_AG5_V15_1_CORE.csv
+        run: cat HISTORY_AG5_V15_1_CORE.csv || true
+      - name: Run cat HISTORY_AG5_V16_0.csv
+        run: cat HISTORY_AG5_V16_0.csv || true
+      - name: Run cat HISTORY_AG5_V16_0_C_LITE.csv
+        run: cat HISTORY_AG5_V16_0_C_LITE.csv || true
+      - name: Run cat HISTORY_AG5_V15_9_C_LITE.csv
+        run: cat HISTORY_AG5_V15_9_C_LITE.csv || true
+      - name: Run cat HISTORY_AG5_V14_9_C.csv
+        run: cat HISTORY_AG5_V14_9_C.csv || true
+      - name: Run cat HISTORY_AG5_V13_5.csv
+        run: cat HISTORY_AG5_V13_5.csv || true
+      - name: Run cat HISTORY_AG5_V20_3.csv
+        run: cat HISTORY_AG5_V20_3.csv || true
+      - name: Run cat HISTORY_AG6_V1_1.csv
+        run: cat HISTORY_AG6_V1_1.csv || true
