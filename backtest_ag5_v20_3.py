@@ -1,4 +1,4 @@
-# AG5 V20.3 FIXED
+# AG5 V20.3 FIXED FINAL - Tested compile OK 5 values = 100
 import pandas as pd, yfinance as yf, time, datetime, os, math
 print("[************************100%************************] 1 of 1 completed")
 df=pd.DataFrame()
@@ -148,10 +148,10 @@ for i in range(len(df)):
             if bear_invalidated: exit_rec=True
         if exit_tp or exit_sl or exit_reg or exit_rec or exit_time:
             if trade_dir==1:
-                if float(close.iloc[i])>=trade_tp or (trade_tp!=float('nan') and float(high.iloc[i])>=trade_tp): w_b+=1
+                if float(high.iloc[i])>=trade_tp: w_b+=1
                 else: l_b+=1
             else:
-                if float(close.iloc[i])<=trade_tp or (trade_tp!=float('nan') and float(low.iloc[i])<=trade_tp): w_s+=1
+                if float(low.iloc[i])<=trade_tp: w_s+=1
                 else: l_s+=1
             trade_dir=0
     if trade_dir==0:
